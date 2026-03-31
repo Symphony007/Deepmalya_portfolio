@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Montserrat:wght@100;200;300;400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Cinzel", serif;
+  --font-body: "Montserrat", sans-serif;
+  --color-gold: #c9a84c;
+  --color-text-primary: #F1EFF1;
+}
+
+@layer base {
+  body {
+    @apply bg-black text-text-primary antialiased overflow-x-hidden;
+  }
+}
+
+@keyframes katana-glow {
+  0%, 100% { opacity: 0.3; filter: drop-shadow(0 0 2px rgba(201, 168, 76, 0.2)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(201, 168, 76, 0.6)); }
+}
+
+.animate-katana-glow {
+  animation: katana-glow 3s ease-in-out infinite;
+}
+
+@keyframes blade-shine {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+
+.animate-blade-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-blade-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.4), transparent);
+  animation: blade-shine 4s linear infinite;
+}
+
+@keyframes scroll-line {
+  0% { transform: scaleY(0); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+  50.1% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+.animate-scroll-line {
+  animation: scroll-line 2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* ── INK WASH ──────────────────────────────────────────────────────────────
+   The SVG filter used by SkillsSection's ink overlay needs the element it's
+   applied to be overflow: visible — otherwise the turbulence displacement
+   gets hard-clipped at the element boundary, killing the organic edge.
+   We target the overlay via its direct parent section's overflow.
+   The section keeps overflow:hidden for layout, but the overlay itself
+   must be allowed to bleed past its own box for the filter to work.
+────────────────────────────────────────────────────────────────────────── */
+#skills .ink-overlay-filter-target {
+  overflow: visible;
+}
