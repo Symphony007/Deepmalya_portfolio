@@ -55,6 +55,9 @@ export function useProjectsAnimation({
         return;
       }
 
+      // Past the off-screen above state — ensure the wrapper is definitely visible
+      if (innerWrapRef.current) innerWrapRef.current.style.opacity = '1';
+
       // ── Off-screen below — enforce fully-open final state ─────────────
       if (scrolled > scrollRange) {
         if (innerWrapRef.current) innerWrapRef.current.style.transform = 'translateY(0%)';

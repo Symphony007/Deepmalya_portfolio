@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import AboutSection from './features/about/AboutSection';
 import SkillsSection from './features/skills/SkillsSection';
 import ProjectsSection from './features/projects/ProjectsSection';
+import ContactSection from './features/contact/ContactSection';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -14,6 +15,7 @@ const SECTIONS = [
   { label: 'About',     id: 'about' },
   { label: 'Skills',    id: 'skills' },
   { label: 'Projects',  id: 'projects' },
+  { label: 'Contact',   id: 'contact' },
 ];
 
 const NAV_ITEMS = SECTIONS.slice(1);
@@ -80,10 +82,12 @@ export default function App() {
         if (pEl) targets['projects'] = pEl.getBoundingClientRect().top + window.scrollY;
       }
 
-      scrollTargetsRef.current = targets;
+      const cEl = document.getElementById('contact');
+      if (cEl) {
+        targets['contact'] = cEl.getBoundingClientRect().top + window.scrollY;
+      }
 
-      // Only need to compute once — unsubscribe immediately after
-      ScrollTrigger.removeEventListener('refresh', onRefreshComplete);
+      scrollTargetsRef.current = targets;
     };
 
     ScrollTrigger.addEventListener('refresh', onRefreshComplete);
@@ -113,7 +117,7 @@ export default function App() {
       if (navOpen) setNavOpen(false);
 
       let active = 'home';
-      const order = ['home', 'about', 'skills', 'projects'];
+      const order = ['home', 'about', 'skills', 'projects', 'contact'];
       for (const id of order) {
         const t = targets[id] ?? 0;
         if (scrollY >= t - vh * 0.4) active = id;
@@ -245,6 +249,7 @@ export default function App() {
 
       <SkillsSection />
       <ProjectsSection />
+      <ContactSection />
 
       {/* ── Global SVG Filter for side-panel rough edges ───────────────── */}
       <svg className="absolute w-0 h-0" aria-hidden="true">

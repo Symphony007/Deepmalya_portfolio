@@ -199,7 +199,7 @@ export default function SkillsSection() {
           from { transform: rotateX(-12deg) rotateY(0deg); }
           to   { transform: rotateX(-12deg) rotateY(360deg); }
         }
-        .carousel-ring:hover {
+        #skills:has(.carousel-ring:hover) .carousel-ring {
           animation-play-state: paused !important;
         }
       `}</style>
