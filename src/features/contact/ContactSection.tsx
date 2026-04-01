@@ -1,14 +1,24 @@
 import React from 'react';
 import { motion } from 'motion/react';
 
+// FIX #8: Phone number restored. It was present in the original AboutSection
+// CONTACTS array but was silently dropped during the refactor. Consolidated
+// here in ContactSection alongside the email CTA.
+
 export default function ContactSection() {
+  // FIX #6: Removed the unnecessary <> fragment wrapper. A component can
+  // return an array of elements or use a single wrapper — the fragment here
+  // served no purpose since section + footer can be wrapped in a single div,
+  // or returned as-is from a fragment that's actually needed. Since both
+  // elements are siblings that need to share the same z-index context and
+  // background, a single wrapping div is cleaner.
   return (
-    <>
-        <section 
-        id="contact" 
-        className="w-full relative flex flex-col items-center justify-center py-40 md:py-56 z-[100] bg-[#010101]" 
+    <div className="w-full relative z-[100]">
+      <section
+        id="contact"
+        className="w-full flex flex-col items-center justify-center py-40 md:py-56 bg-[#010101]"
       >
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 30 }}
           whileInView={{ opacity: 1, scale: 1, y: 0 }}
           viewport={{ once: true, margin: "-10%" }}
@@ -19,10 +29,10 @@ export default function ContactSection() {
             Let's Collaborate
           </h2>
           <div className="w-16 h-px bg-[#c9a84c]/30 mb-16" />
-          
+
           <div className="flex flex-col items-center justify-center gap-12 w-full mt-4">
-            
-            {/* MAIN CTA: EMAIL (BOLD TEXT) */}
+
+            {/* MAIN CTA: EMAIL */}
             <a
               href="mailto:mallickdeepmalya05@gmail.com"
               className="group relative inline-block pointer-events-auto"
@@ -33,8 +43,20 @@ export default function ContactSection() {
               <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-0 h-px bg-gold transition-all duration-500 group-hover:w-full" />
             </a>
 
-            {/* SECONDARY OPTIONS */}
+            {/* SECONDARY: Phone */}
+            <a
+              href="tel:+918017836178"
+              className="group relative inline-block pointer-events-auto"
+            >
+              <span className="font-body text-base md:text-lg uppercase tracking-[0.25em] text-gold/50 group-hover:text-gold/80 transition-colors duration-300">
+                +91 80178 36178
+              </span>
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-px bg-gold/50 transition-all duration-500 group-hover:w-full" />
+            </a>
+
+            {/* TERTIARY OPTIONS: LinkedIn + Resume */}
             <div className="flex items-center gap-8 md:gap-12 mt-4">
+
               {/* LinkedIn */}
               <a
                 href="https://linkedin.com/in/deepmalya-mallick"
@@ -69,15 +91,16 @@ export default function ContactSection() {
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-px bg-gold transition-all duration-500 group-hover:w-full" />
               </a>
             </div>
+
           </div>
         </motion.div>
       </section>
 
-      <footer className="w-full py-8 text-center bg-[#010101] relative z-[100] border-t border-white/5">
+      <footer className="w-full py-8 text-center bg-[#010101] border-t border-white/5">
         <p className="font-body text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-gold/30">
           © {new Date().getFullYear()} Deepmalya Mallick. All rights reserved.
         </p>
       </footer>
-    </>
+    </div>
   );
 }

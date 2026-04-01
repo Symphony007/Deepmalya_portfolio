@@ -32,8 +32,12 @@ export function useProjectsAnimation({
     if (!wrap || !paper || !content) return;
 
     const ROLLED_H = 140;
-    const vh = window.innerHeight;
-    const OPEN_H = vh * 0.76;
+
+    // FIX #2: Use `let` so the resize handler can update these before
+    // re-firing onScroll. Closures capture the variable binding, not the
+    // value, so onScroll will always read the latest vh and OPEN_H.
+    let vh = window.innerHeight;
+    let OPEN_H = vh * 0.76;
 
     paper.style.height = `${ROLLED_H}px`;
     content.style.transform = 'translateY(0)';
@@ -180,11 +184,21 @@ export function useProjectsAnimation({
       }
     };
 
+    // FIX #2: Recalculate vh and OPEN_H on resize, then re-fire scroll
+    // handler so all phases immediately reflect the new dimensions.
+    const onResize = () => {
+      vh = window.innerHeight;
+      OPEN_H = vh * 0.76;
+      onScrollRaw();
+    };
+
     window.addEventListener('scroll', onScrollRaw, { passive: true });
-    onScrollRaw(); // fire once in case already in view
+    window.addEventListener('resize', onResize);
+    onScrollRaw();
 
     return () => {
       window.removeEventListener('scroll', onScrollRaw);
+      window.removeEventListener('resize', onResize);
     };
   }, [wrapRef, paperRef, contentRef, botRef, leftDoorRef, rightDoorRef, scrollWrapRef, innerWrapRef]);
 }
