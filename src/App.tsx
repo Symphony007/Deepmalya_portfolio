@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import AboutSection from './components/AboutSection';
-import SkillsSection from './components/SkillsSection';
-import ProjectsSection from './components/ProjectsSection';
+import AboutSection from './features/about/AboutSection';
+import SkillsSection from './features/skills/SkillsSection';
+import ProjectsSection from './features/projects/ProjectsSection';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -74,8 +74,10 @@ export default function App() {
         targets['skills'] = skillsTrigger.start + pinLength * 0.02;
       }
       if (projectsTrigger) {
-        // Projects has no content offset needed — land at its start.
         targets['projects'] = projectsTrigger.start;
+      } else {
+        const pEl = document.getElementById('projects');
+        if (pEl) targets['projects'] = pEl.getBoundingClientRect().top + window.scrollY;
       }
 
       scrollTargetsRef.current = targets;
