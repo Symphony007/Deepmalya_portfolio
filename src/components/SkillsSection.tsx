@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { FRAME_COUNT, skillsFramePath as framePath } from '../lib/frames';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const FRAME_COUNT = 141;
-const framePath = (i: number) =>
-  `/skills/finalbg_frames/frame_${String(i).padStart(4, '0')}.png`;
 
-const ICON_BASE = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons';
+
+const ICON_BASE = '/icons';
 
 // Custom inline SVG for YOLOv8 (no official devicon exists)
 const YOLO_ICON_SVG = `data:image/svg+xml,${encodeURIComponent(`
@@ -130,16 +129,41 @@ export default function SkillsSection() {
   // Kept in a ref so the resize handler reads the latest value
   const playheadRef = useRef({ frame: 0 });
 
+  // Defer frame loading until the section is within 2 screen-heights of the viewport
   useEffect(() => {
-    const imgs: HTMLImageElement[] = [];
-    let n = 0;
-    for (let i = 1; i <= FRAME_COUNT; i++) {
-      const img = new Image();
-      img.src = framePath(i);
-      img.onload = () => { if (++n === FRAME_COUNT) setLoaded(true); };
-      imgs.push(img);
-    }
-    imagesRef.current = imgs;
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        observer.disconnect(); // only trigger once
+
+        const imgs: HTMLImageElement[] = [];
+        let n = 0;
+        let failed = 0;
+
+        const onSettle = () => {
+          if (n + failed === FRAME_COUNT) {
+            if (failed > 0) console.warn(`[SkillsSection] ${failed} frame(s) failed to load.`);
+            setLoaded(true);
+          }
+        };
+
+        for (let i = 1; i <= FRAME_COUNT; i++) {
+          const img   = new Image();
+          img.src     = framePath(i);
+          img.onload  = () => { n++;      onSettle(); };
+          img.onerror = () => { failed++; onSettle(); };
+          imgs.push(img);
+        }
+        imagesRef.current = imgs;
+      },
+      { rootMargin: '200% 0px' } // start loading when section is 2 screen-heights away
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -165,75 +189,64 @@ export default function SkillsSection() {
     };
     render(images[0]);
 
-    // Wait until after App.tsx's ScrollTrigger.refresh() fires (1200ms) before
-    // registering this section's ScrollTrigger, so pin spacers are measured correctly.
-    const setupTimer = setTimeout(() => {
-      gsap.set(samuraiRef.current,   { yPercent: 100, opacity: 0 });
-      gsap.set(frontRingRef.current, { opacity: 0, visibility: 'hidden' });
-      gsap.set(backRingRef.current,  { opacity: 0, visibility: 'hidden' });
+    gsap.set(samuraiRef.current,   { yPercent: 100, opacity: 0 });
+    gsap.set(frontRingRef.current, { opacity: 0, visibility: 'hidden' });
+    gsap.set(backRingRef.current,  { opacity: 0, visibility: 'hidden' });
 
-      const gsapCtx = gsap.context(() => {
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            start:   'top top',
-            end:     '+=600%',
-            scrub:   1,
-            pin:     true,
-          },
-        });
+    const gsapCtx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start:   'top top',
+          end:     '+=600%',
+          scrub:   1,
+          pin:     true,
+        },
+      });
 
-        tl.to(playheadRef.current, {
-          frame: FRAME_COUNT - 1,
-          snap: 'frame',
-          ease: 'none',
-          duration: 10,
-          onUpdate: () => {
-            const f = Math.max(0, Math.min(FRAME_COUNT - 1, Math.round(playheadRef.current.frame)));
-            render(images[f]);
-          },
-        }, 0);
+      tl.to(playheadRef.current, {
+        frame: FRAME_COUNT - 1,
+        snap: 'frame',
+        ease: 'none',
+        duration: 10,
+        onUpdate: () => {
+          const f = Math.max(0, Math.min(FRAME_COUNT - 1, Math.round(playheadRef.current.frame)));
+          render(images[f]);
+        },
+      }, 0);
 
-        tl.to(samuraiRef.current, {
-          yPercent: 25,
-          opacity: 1,
-          duration: 2,
-          ease: 'power2.out',
-        }, 7);
+      tl.to(samuraiRef.current, {
+        yPercent: 25,
+        opacity: 1,
+        duration: 2,
+        ease: 'power2.out',
+      }, 7);
 
-        tl.to(headingRef.current, {
-          y: -280,
-          duration: 2,
-          ease: 'power2.out',
-        }, 7);
+      tl.to(headingRef.current, {
+        y: -280,
+        duration: 2,
+        ease: 'power2.out',
+      }, 7);
 
-        // Both rings appear together
-        tl.set(frontRingRef.current, { visibility: 'visible' }, 9.9);
-        tl.to(frontRingRef.current,  { opacity: 1, duration: 0.1, ease: 'none' }, 9.9);
-        tl.set(backRingRef.current,  { visibility: 'visible' }, 9.9);
-        tl.to(backRingRef.current,   { opacity: 1, duration: 0.1, ease: 'none' }, 9.9);
+      // Both rings appear together
+      tl.set(frontRingRef.current, { visibility: 'visible' }, 9.9);
+      tl.to(frontRingRef.current,  { opacity: 1, duration: 0.1, ease: 'none' }, 9.9);
+      tl.set(backRingRef.current,  { visibility: 'visible' }, 9.9);
+      tl.to(backRingRef.current,   { opacity: 1, duration: 0.1, ease: 'none' }, 9.9);
 
-        // Hold-frame buffer before ProjectsSection unpin begins
-        tl.to({}, { duration: 3.5 });
-      }, section);
+      // Hold-frame buffer before ProjectsSection unpin begins
+      tl.to({}, { duration: 3.5 });
+    }, section);
 
-      const onResize = () => {
-        const f = Math.max(0, Math.min(FRAME_COUNT - 1, Math.round(playheadRef.current.frame)));
-        render(images[f]);
-      };
-      window.addEventListener('resize', onResize);
-
-      // Store teardown on the section element for cleanup below
-      (section as any).__skillsCleanup = () => {
-        gsapCtx.revert();
-        window.removeEventListener('resize', onResize);
-      };
-    }, 10); // Run early so App.tsx can capture the target
+    const onResize = () => {
+      const f = Math.max(0, Math.min(FRAME_COUNT - 1, Math.round(playheadRef.current.frame)));
+      render(images[f]);
+    };
+    window.addEventListener('resize', onResize);
 
     return () => {
-      clearTimeout(setupTimer);
-      const cleanup = (section as any).__skillsCleanup;
-      if (cleanup) cleanup();
+      gsapCtx.revert();
+      window.removeEventListener('resize', onResize);
     };
   }, [loaded]);
 

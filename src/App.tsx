@@ -23,6 +23,7 @@ export default function App() {
   const [showNavigator, setShowNavigator] = useState(false);
   const [navOpen,       setNavOpen]       = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const [videoStarted,  setVideoStarted]  = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
 
@@ -30,17 +31,10 @@ export default function App() {
   // after GSAP pin spacers have been inserted into the DOM.
   const scrollTargetsRef = useRef<Record<string, number>>({});
 
-  // ── Force landing page on every reload ──────────────────────────────────
-  useEffect(() => {
-    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    window.scrollTo(0, 0);
-  }, []);
 
   // ── Lenis + GSAP + compute scroll targets after refresh ─────────────────
   useEffect(() => {
     if (videoRef.current) videoRef.current.playbackRate = 1.5;
-
-    const navTimer = setTimeout(() => setShowMenu(true), 2500);
 
     const lenis = new Lenis({
       duration: 1.2,
@@ -52,30 +46,46 @@ export default function App() {
     gsap.ticker.add((time) => lenis.raf(time * 1000));
     gsap.ticker.lagSmoothing(0);
 
-    // Wait 1300ms — slightly after all section ScrollTriggers have registered
-    // and after App's own 1200ms refresh — then read .start off each trigger.
-    // This gives us the true scroll position GSAP uses, which already accounts
-    // for all pin spacers. Without this, offsetTop returns pre-spacer values
-    // and every link scrolls to the wrong place.
-    const refreshTimer = setTimeout(() => {
-      ScrollTrigger.refresh();
-
-      const vh = window.innerHeight;
+    // Listen for GSAP's own refresh-complete event instead of guessing
+    // with setTimeout. This fires after ALL ScrollTriggers (including
+    // child components) have fully computed their pin spacers.
+    const onRefreshComplete = () => {
       const targets: Record<string, number> = { home: 0 };
+      const allTriggers = ScrollTrigger.getAll();
 
-      const getPos = (id: string) => {
-        const el = document.getElementById(id);
-        if (!el) return 0;
-        return el.getBoundingClientRect().top + window.scrollY;
-      };
+      const getTriggerFor = (id: string) =>
+        allTriggers.find((t) => t.trigger === document.getElementById(id));
 
-      // Measure absolute pixel coordinates on the page now that GSAP pin-spacers are fully injected.
-      targets['about'] = getPos('about') + vh * 6.3;
-      targets['skills'] = getPos('skills') + vh * 0.5;
-      targets['projects'] = getPos('projects');
+      const aboutTrigger    = getTriggerFor('about');
+      const skillsTrigger   = getTriggerFor('skills');
+      const projectsTrigger = getTriggerFor('projects');
+
+      if (aboutTrigger) {
+        const pinLength = aboutTrigger.end - aboutTrigger.start;
+        // About content (photo + text) becomes visible ~63% through
+        // the AboutSection pin — this ratio is timeline-derived, not
+        // screen-derived, so it holds on any screen size.
+        targets['about'] = aboutTrigger.start + pinLength * 0.63;
+      }
+      if (skillsTrigger) {
+        // Skills heading is centred on entry — land just past the start
+        // so the section title is already visible when nav fires.
+        const pinLength = skillsTrigger.end - skillsTrigger.start;
+        targets['skills'] = skillsTrigger.start + pinLength * 0.02;
+      }
+      if (projectsTrigger) {
+        // Projects has no content offset needed — land at its start.
+        targets['projects'] = projectsTrigger.start;
+      }
 
       scrollTargetsRef.current = targets;
-    }, 1300);
+
+      // Only need to compute once — unsubscribe immediately after
+      ScrollTrigger.removeEventListener('refresh', onRefreshComplete);
+    };
+
+    ScrollTrigger.addEventListener('refresh', onRefreshComplete);
+    ScrollTrigger.refresh();
 
     const stopLenis = () => lenis.stop();
     const startLenis = () => lenis.start();
@@ -83,8 +93,7 @@ export default function App() {
     window.addEventListener('lenis-start', startLenis);
 
     return () => {
-      clearTimeout(navTimer);
-      clearTimeout(refreshTimer);
+      ScrollTrigger.removeEventListener('refresh', onRefreshComplete);
       window.removeEventListener('lenis-stop', stopLenis);
       window.removeEventListener('lenis-start', startLenis);
       lenis.destroy();
@@ -127,13 +136,23 @@ export default function App() {
   };
 
   return (
-    <div className="bg-black w-full min-h-screen">
+    <div className="bg-white w-full min-h-screen">
       <AboutSection>
-        <div id="home" className="relative h-screen w-full bg-black flex flex-col items-center justify-center overflow-hidden text-text-primary">
+        <div id="home" className="relative h-screen w-full bg-white flex flex-col items-center justify-center overflow-hidden text-text-primary">
 
           {/* Background Video */}
-          <video ref={videoRef} autoPlay muted playsInline
-                 className="absolute top-0 left-0 w-full h-full object-cover z-0">
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            poster="/hero/poster.jpg"
+            onPlay={() => {
+              setVideoStarted(true);
+              setTimeout(() => setShowMenu(true), 2000);
+            }}
+            className="absolute top-0 left-0 w-full h-full object-cover z-0"
+          >
             <source src="/hero/smokevapor.mp4" type="video/mp4" />
           </video>
 
@@ -172,7 +191,7 @@ export default function App() {
 
             <motion.span
               initial={{ opacity: 0, letterSpacing: '0.6em' }}
-              animate={{ opacity: 1, letterSpacing: '0.45em' }}
+              animate={videoStarted ? { opacity: 1, letterSpacing: '0.45em' } : { opacity: 0, letterSpacing: '0.6em' }}
               transition={{ duration: 1.5, delay: 0.5, ease: 'easeOut' }}
               className="font-body text-[10px] md:text-[11px] uppercase mb-6 text-gold/70 tracking-[0.45em] flex items-center gap-2"
             >
@@ -186,12 +205,17 @@ export default function App() {
             </motion.span>
 
             <div className="flex flex-col items-center leading-none">
-              <h1 className="font-display text-[14vw] md:text-[130px] leading-[0.9] tracking-widest text-text-primary drop-shadow-[0_0_15px_rgba(241,239,241,0.1)]">
+              <motion.h1
+                initial={{ opacity: 0 }}
+                animate={videoStarted ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className="font-display text-[14vw] md:text-[130px] leading-[0.9] tracking-widest text-text-primary drop-shadow-[0_0_15px_rgba(241,239,241,0.1)]"
+              >
                 DEEPMALYA
-              </h1>
+              </motion.h1>
               <motion.span
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                animate={videoStarted ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ duration: 1.2, delay: 0.6, ease: 'easeOut' }}
                 className="font-display uppercase text-gold/80 text-center"
                 style={{ fontSize: 'clamp(1.6rem, 5vw, 52px)', letterSpacing: '0.55em' }}
@@ -202,7 +226,7 @@ export default function App() {
 
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={videoStarted ? { opacity: 1 } : { opacity: 0 }}
               transition={{ duration: 1, delay: 1.8 }}
               className="flex flex-wrap justify-center gap-4 md:gap-6 font-body text-[11px] md:text-[13px] font-medium uppercase tracking-[0.2em] text-text-primary/40 mt-10"
             >
@@ -262,8 +286,7 @@ export default function App() {
                       background: '#c8b698',
                     }}
                   >
-                    <div className="absolute inset-0 mix-blend-multiply opacity-80"
-                         style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')" }} />
+                    <div className="absolute inset-0 mix-blend-multiply opacity-80 texture-aged-paper" />
                     <div className="absolute inset-0 mix-blend-multiply"
                          style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(90,45,15,0.65) 85%, rgba(40,15,0,0.9) 100%)' }} />
                     {/* Extra stains & wear */}

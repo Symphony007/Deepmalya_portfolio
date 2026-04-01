@@ -293,8 +293,7 @@ export default function ProjectsSection() {
             <div className="absolute inset-0 z-0 bg-[#e3d5c1]"
               style={{ boxShadow: 'inset 0 0 80px rgba(80,60,30,0.4)' }}
             >
-              <div className="absolute inset-0 opacity-50 mix-blend-multiply"
-                style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')" }} />
+              <div className="absolute inset-0 opacity-50 mix-blend-multiply texture-aged-paper" />
               <div className="absolute inset-0"
                 style={{ background: 'radial-gradient(circle at 100% 50%, rgba(255,245,220,0.1) 0%, transparent 60%)' }} />
             </div>
@@ -318,8 +317,7 @@ export default function ProjectsSection() {
             <div className="absolute inset-0 z-0 bg-[#e3d5c1]"
               style={{ boxShadow: 'inset 0 0 80px rgba(80,60,30,0.4)' }}
             >
-              <div className="absolute inset-0 opacity-50 mix-blend-multiply"
-                style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')" }} />
+              <div className="absolute inset-0 opacity-50 mix-blend-multiply texture-aged-paper" />
               <div className="absolute inset-0"
                 style={{ background: 'radial-gradient(circle at 0% 50%, rgba(255,245,220,0.1) 0%, transparent 60%)' }} />
             </div>
@@ -368,8 +366,7 @@ export default function ProjectsSection() {
                 className="absolute inset-0"
                 style={{ background: '#c2b092', filter: 'url(#roughpaper)' }}
               >
-                <div className="absolute inset-0 opacity-60 mix-blend-multiply"
-                  style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')" }} />
+                <div className="absolute inset-0 opacity-60 mix-blend-multiply texture-aged-paper" />
                 <div className="absolute inset-0 mix-blend-multiply"
                   style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(60,30,10,0.6) 80%, rgba(20,10,0,0.95) 100%)' }} />
                 <div className="absolute inset-0"

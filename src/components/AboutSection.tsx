@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion, AnimatePresence } from 'motion/react';
+import { FRAME_COUNT, aboutFramePath as framePath } from '../lib/frames';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -158,9 +159,7 @@ export default function AboutSection({ children }: { children: React.ReactNode }
   const [showEducation, setShowEducation] = useState(false);
   const imagesRef = useRef<HTMLImageElement[]>([]);
 
-  const FRAME_COUNT = 141;
-  const framePath = (i: number) =>
-    `/about/torri_sharp_frames/frame_${String(i).padStart(4, '0')}.png`;
+
 
   // ── Disable scrolling when modal is open ───────────────────────────────
   useEffect(() => {
@@ -183,12 +182,25 @@ export default function AboutSection({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
+    const PRELOAD_THRESHOLD = 40; // enough for early animation, rest load in background
     const imgs: HTMLImageElement[] = [];
     let n = 0;
+    let failed = 0;
+
+    const onSettle = () => {
+      // Unlock animation once threshold is reached
+      if (n === PRELOAD_THRESHOLD) setLoaded(true);
+      // Log when fully complete
+      if (n + failed === FRAME_COUNT && failed > 0) {
+        console.warn(`[AboutSection] ${failed} frame(s) failed to load.`);
+      }
+    };
+
     for (let i = 1; i <= FRAME_COUNT; i++) {
-      const img  = new Image();
-      img.src    = framePath(i);
-      img.onload = () => { if (++n === FRAME_COUNT) setLoaded(true); };
+      const img    = new Image();
+      img.src      = framePath(i);
+      img.onload   = () => { n++;      onSettle(); };
+      img.onerror  = () => { failed++; onSettle(); };
       imgs.push(img);
     }
     imagesRef.current = imgs;
@@ -649,8 +661,8 @@ export default function AboutSection({ children }: { children: React.ReactNode }
                 }}
               >
                 {/* Cinematic Texture */}
-                <div className="absolute inset-0 opacity-80 mix-blend-multiply"
-                     style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/aged-paper.png')", borderRadius: 'inherit' }} />
+                <div className="absolute inset-0 opacity-80 mix-blend-multiply texture-aged-paper"
+                     style={{ borderRadius: 'inherit' }} />
                 <div className="absolute inset-0 mix-blend-multiply"
                      style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(90,45,15,0.65) 85%, rgba(40,15,0,0.9) 100%)', borderRadius: 'inherit' }} />
                 
