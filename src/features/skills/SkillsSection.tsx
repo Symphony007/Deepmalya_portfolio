@@ -5,7 +5,6 @@ import { useSkillsAnimation } from './hooks/useSkillsAnimation';
 
 const ICON_BASE = '/icons';
 
-// Custom inline SVG for YOLOv8 (no official devicon exists)
 const YOLO_ICON_SVG = `data:image/svg+xml,${encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" rx="14" fill="#00BFFF"/>
@@ -119,7 +118,7 @@ export default function SkillsSection() {
     framePath,
     priorityFrames: 20,
     intersectionRef: sectionRef,
-    rootMargin: '200% 0px',
+    rootMargin: '1800px 0px',
   });
 
   useSkillsAnimation({

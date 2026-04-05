@@ -11,11 +11,11 @@ import ContactSection from './features/contact/ContactSection';
 gsap.registerPlugin(ScrollTrigger);
 
 const SECTIONS = [
-  { label: 'Home',      id: 'home' },
-  { label: 'About',     id: 'about' },
-  { label: 'Skills',    id: 'skills' },
-  { label: 'Projects',  id: 'projects' },
-  { label: 'Contact',   id: 'contact' },
+  { label: 'Home',     id: 'home' },
+  { label: 'About',    id: 'about' },
+  { label: 'Skills',   id: 'skills' },
+  { label: 'Projects', id: 'projects' },
+  { label: 'Contact',  id: 'contact' },
 ];
 
 const NAV_ITEMS = SECTIONS.slice(1);
@@ -29,10 +29,7 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
 
-  // scrollTargets holds the ACTUAL scroll pixel position for each section
-  // after GSAP pin spacers have been inserted into the DOM.
   const scrollTargetsRef = useRef<Record<string, number>>({});
-
 
   // ── Lenis + GSAP + compute scroll targets after refresh ─────────────────
   useEffect(() => {
@@ -45,12 +42,12 @@ export default function App() {
     lenisRef.current = lenis;
 
     lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((time) => lenis.raf(time * 1000));
+
+    // Store ticker fn reference so we can cleanly remove it on unmount
+    const tickerFn = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(tickerFn);
     gsap.ticker.lagSmoothing(0);
 
-    // Listen for GSAP's own refresh-complete event instead of guessing
-    // with setTimeout. This fires after ALL ScrollTriggers (including
-    // child components) have fully computed their pin spacers.
     const onRefreshComplete = () => {
       const targets: Record<string, number> = { home: 0 };
       const allTriggers = ScrollTrigger.getAll();
@@ -64,14 +61,9 @@ export default function App() {
 
       if (aboutTrigger) {
         const pinLength = aboutTrigger.end - aboutTrigger.start;
-        // About content (photo + text) becomes visible ~63% through
-        // the AboutSection pin — this ratio is timeline-derived, not
-        // screen-derived, so it holds on any screen size.
         targets['about'] = aboutTrigger.start + pinLength * 0.63;
       }
       if (skillsTrigger) {
-        // Skills heading is centred on entry — land just past the start
-        // so the section title is already visible when nav fires.
         const pinLength = skillsTrigger.end - skillsTrigger.start;
         targets['skills'] = skillsTrigger.start + pinLength * 0.02;
       }
@@ -93,20 +85,26 @@ export default function App() {
     ScrollTrigger.addEventListener('refresh', onRefreshComplete);
     ScrollTrigger.refresh();
 
-    const stopLenis = () => lenis.stop();
+    const stopLenis  = () => lenis.stop();
     const startLenis = () => lenis.start();
-    window.addEventListener('lenis-stop', stopLenis);
+    window.addEventListener('lenis-stop',  stopLenis);
     window.addEventListener('lenis-start', startLenis);
+
+    // Refresh ScrollTrigger on resize so pin spacers stay accurate
+    const onResize = () => ScrollTrigger.refresh();
+    window.addEventListener('resize', onResize);
 
     return () => {
       ScrollTrigger.removeEventListener('refresh', onRefreshComplete);
-      window.removeEventListener('lenis-stop', stopLenis);
+      window.removeEventListener('lenis-stop',  stopLenis);
       window.removeEventListener('lenis-start', startLenis);
+      window.removeEventListener('resize', onResize);
+      gsap.ticker.remove(tickerFn);
       lenis.destroy();
     };
   }, []);
 
-  // ── Track active section using pre-computed targets ───────────────────────
+  // ── Track active section using pre-computed targets ──────────────────────
   useEffect(() => {
     const onScroll = () => {
       const scrollY = window.scrollY;
@@ -162,7 +160,7 @@ export default function App() {
             <source src="/hero/smokevapor.mp4" type="video/mp4" />
           </video>
 
-          {/* ── Navbar ────────────────────────────────────────────────── */}
+          {/* ── Navbar ─────────────────────────────────────────────────── */}
           <nav className="fixed top-0 left-0 w-full z-50 flex justify-center py-8">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -192,7 +190,7 @@ export default function App() {
             </motion.div>
           </nav>
 
-          {/* ── Hero Content ──────────────────────────────────────────── */}
+          {/* ── Hero Content ───────────────────────────────────────────── */}
           <main className="relative z-10 flex flex-col items-center text-center px-4">
 
             <motion.span
@@ -251,7 +249,7 @@ export default function App() {
       <ProjectsSection />
       <ContactSection />
 
-      {/* ── Global SVG Filter for side-panel rough edges ───────────────── */}
+      {/* ── Global SVG Filter for side-panel rough edges ────────────────── */}
       <svg className="absolute w-0 h-0" aria-hidden="true">
         <filter id="nav-roughpaper" x="-20%" y="-20%" width="140%" height="140%">
           <feTurbulence type="fractalNoise" baseFrequency="0.06 0.2" numOctaves="4" result="noise" />
@@ -259,7 +257,7 @@ export default function App() {
         </filter>
       </svg>
 
-      {/* ── Floating section navigator ─────────────────────────────────────
+      {/* ── Floating section navigator ──────────────────────────────────────
           Appears after scrolling past the landing page.
           Collapsed: a pulsing gold dot.
           Expanded: frosted panel with all sections + active indicator.
@@ -294,9 +292,10 @@ export default function App() {
                     }}
                   >
                     <div className="absolute inset-0 mix-blend-multiply opacity-80 texture-aged-paper" />
-                    <div className="absolute inset-0 mix-blend-multiply"
-                         style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(90,45,15,0.65) 85%, rgba(40,15,0,0.9) 100%)' }} />
-                    {/* Extra stains & wear */}
+                    <div
+                      className="absolute inset-0 mix-blend-multiply"
+                      style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(90,45,15,0.65) 85%, rgba(40,15,0,0.9) 100%)' }}
+                    />
                     <div className="absolute top-[10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#5a3010] mix-blend-multiply opacity-20 blur-[10px]" />
                     <div className="absolute bottom-[-10%] right-[-5%] w-[60%] h-[40%] rounded-full bg-[#3a1a05] mix-blend-multiply opacity-30 blur-[12px]" />
                   </div>

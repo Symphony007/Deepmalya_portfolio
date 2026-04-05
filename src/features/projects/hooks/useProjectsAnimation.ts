@@ -33,9 +33,6 @@ export function useProjectsAnimation({
 
     const ROLLED_H = 140;
 
-    // FIX #2: Use `let` so the resize handler can update these before
-    // re-firing onScroll. Closures capture the variable binding, not the
-    // value, so onScroll will always read the latest vh and OPEN_H.
     let vh = window.innerHeight;
     let OPEN_H = vh * 0.76;
 
@@ -48,7 +45,7 @@ export function useProjectsAnimation({
       const scrollRange = wrapH - vh;
       const scrolled = -rect.top;
 
-      // ── Off-screen above ───────────────────────────────────────────────
+      // ── Off-screen above ──────────────────────────────────────────────
       if (scrolled < -vh) {
         if (innerWrapRef.current) {
           innerWrapRef.current.style.transform = 'translateY(-200%)';
@@ -59,7 +56,6 @@ export function useProjectsAnimation({
         return;
       }
 
-      // Past the off-screen above state — ensure the wrapper is definitely visible
       if (innerWrapRef.current) innerWrapRef.current.style.opacity = '1';
 
       // ── Off-screen below — enforce fully-open final state ─────────────
@@ -83,7 +79,7 @@ export function useProjectsAnimation({
 
       // ── PHASE 0: Sliding in from above ────────────────────────────────
       if (scrolled <= 0) {
-        const tDrop = (scrolled + vh) / vh; // 0 → 1
+        const tDrop = (scrolled + vh) / vh;
         if (innerWrapRef.current) {
           innerWrapRef.current.style.opacity = '1';
           innerWrapRef.current.style.transform = `translateY(${-200 + tDrop * 200}%)`;
@@ -103,13 +99,12 @@ export function useProjectsAnimation({
         return;
       }
 
-      // Past the drop phase — inner wrap is fully in view
       if (innerWrapRef.current) innerWrapRef.current.style.transform = 'translateY(0%)';
 
-      const progress = scrolled / scrollRange; // 0 → 1
+      const progress = scrolled / scrollRange;
       const overflow = Math.max(0, content.scrollHeight - OPEN_H + 80);
 
-      // ── PHASE 1 (0% – 25%): Shoji doors slide open ────────────────────
+      // ── PHASE 1 (0% – 25%): Shoji doors slide open ───────────────────
       if (progress <= 0.25) {
         const t = easeInOutCubic(progress / 0.25);
 
@@ -127,7 +122,7 @@ export function useProjectsAnimation({
         content.style.transform = 'translateY(0)';
       }
 
-      // ── PHASE 2 (25% – 50%): Scroll unrolls downward ──────────────────
+      // ── PHASE 2 (25% – 50%): Scroll unrolls downward ─────────────────
       else if (progress <= 0.5) {
         if (leftDoorRef.current && rightDoorRef.current) {
           leftDoorRef.current.style.transform = 'translateX(-100%)';
@@ -150,7 +145,7 @@ export function useProjectsAnimation({
         }
       }
 
-      // ── PHASE 3 (50% – 100%): Content scrolls upward ──────────────────
+      // ── PHASE 3 (50% – 100%): Content scrolls upward ─────────────────
       else {
         if (leftDoorRef.current && rightDoorRef.current) {
           leftDoorRef.current.style.transform = 'translateX(-100%)';
@@ -184,8 +179,6 @@ export function useProjectsAnimation({
       }
     };
 
-    // FIX #2: Recalculate vh and OPEN_H on resize, then re-fire scroll
-    // handler so all phases immediately reflect the new dimensions.
     const onResize = () => {
       vh = window.innerHeight;
       OPEN_H = vh * 0.76;

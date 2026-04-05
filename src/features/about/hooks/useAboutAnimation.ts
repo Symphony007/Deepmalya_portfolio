@@ -114,7 +114,13 @@ export function useAboutAnimation(props: UseAboutAnimationProps) {
       ctx2d.clearRect(0, 0, canvas.width, canvas.height);
       ctx2d.drawImage(img, 0, 0, img.width, img.height, cx, cy, img.width * ratio, img.height * ratio);
     };
-    render(images[0]);
+
+    // Guard: frame 1 may still be in-flight on real networks
+    if (images[0]?.complete && images[0].naturalWidth > 0) {
+      render(images[0]);
+    } else if (images[0]) {
+      images[0].addEventListener('load', () => render(images[0]), { once: true });
+    }
 
     gsap.set(canvas, { opacity: 0 });
     gsap.set(darkOverlayRef.current, { opacity: 0 });
@@ -216,7 +222,10 @@ export function useAboutAnimation(props: UseAboutAnimationProps) {
 
     }, containerRef);
 
-    let resizeTimer: NodeJS.Timeout;
+    // Force ScrollTrigger to recalculate after this pin is registered
+    ScrollTrigger.refresh();
+
+    let resizeTimer: ReturnType<typeof setTimeout>;
     const onResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
