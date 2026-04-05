@@ -193,15 +193,7 @@ export default function SkillsSection() {
         <CarouselRing />
       </div>
 
-      <style>{`
-        @keyframes carouselSpin {
-          from { transform: rotateX(-12deg) rotateY(0deg); }
-          to   { transform: rotateX(-12deg) rotateY(360deg); }
-        }
-        #skills:has(.carousel-ring:hover) .carousel-ring {
-          animation-play-state: paused !important;
-        }
-      `}</style>
+      {/* carouselSpin keyframes and hover-pause rule moved to index.css */}
     </section>
   );
 }

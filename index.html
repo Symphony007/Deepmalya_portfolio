@@ -43,15 +43,11 @@
     href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Montserrat:wght@100;200;300;400;500;600&display=swap" />
 
   <!-- Preload critical first-render assets -->
-  <link rel="preload" as="video" href="/hero/smokevapor.mp4" type="video/mp4" />
+  <!-- NOTE: as="video" is not a valid preload value, removed to fix console warning -->
   <link rel="preload" as="image" href="/hero/poster.jpg" />
   <link rel="preload" as="image" href="/about/torri_sharp_frames_webp/frame_0001.webp" />
-
-  <!-- Preload fonts directly so browser doesn't wait for Google's CSS to be parsed -->
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="https://fonts.gstatic.com/s/cinzel/v23/8vIU7ww63mVu7gtR-kwKxNvkNOjw-tbnTYrvDE5ZdqU.woff2" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin
-    href="https://fonts.gstatic.com/s/montserrat/v26/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.woff2" />
+  <!-- NOTE: Hardcoded Google Fonts woff2 URLs removed — they were stale/wrong
+       and causing 404 errors. The Google Fonts stylesheet above handles fonts. -->
 </head>
 
 <body>

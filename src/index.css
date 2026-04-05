@@ -23,11 +23,6 @@
   animation: katana-glow 3s ease-in-out infinite;
 }
 
-/* FIX #4: The @keyframes blade-shine definition is kept because it is
-   referenced by an inline style={{ animation: ... }} on the SVG rect
-   inside the katana blade in AboutSection.
-   The old .animate-blade-shine class and its ::after rule have been
-   removed — they were never applied to any element and had no effect. */
 @keyframes blade-shine {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(200%); }
@@ -42,6 +37,16 @@
 
 .animate-scroll-line {
   animation: scroll-line 2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* ── CAROUSEL (moved from SkillsSection component inline style tag) ──────── */
+@keyframes carouselSpin {
+  from { transform: rotateX(-12deg) rotateY(0deg); }
+  to   { transform: rotateX(-12deg) rotateY(360deg); }
+}
+
+#skills:has(.carousel-ring:hover) .carousel-ring {
+  animation-play-state: paused !important;
 }
 
 /* ── INK WASH ──────────────────────────────────────────────────────────────

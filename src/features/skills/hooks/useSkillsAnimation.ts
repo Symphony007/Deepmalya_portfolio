@@ -100,6 +100,12 @@ export function useSkillsAnimation({
       tl.to({}, { duration: 3.5 });
     }, section);
 
+    // Force ScrollTrigger to recalculate after About's pin spacer is set up.
+    // Without this, Skills' ScrollTrigger calculates its start position before
+    // About's pin spacer is fully accounted for, causing the section to never
+    // trigger correctly on production builds.
+    ScrollTrigger.refresh();
+
     let resizeTimer: NodeJS.Timeout;
     const onResize = () => {
       clearTimeout(resizeTimer);
