@@ -117,8 +117,11 @@ export default function SkillsSection() {
     frameCount: FRAME_COUNT,
     framePath,
     priorityFrames: 20,
-    intersectionRef: sectionRef,
-    rootMargin: '1800px 0px',
+    // NOTE: intentionally omitting intersectionRef here.
+    // The About section's GSAP pin spacer (~900vh) pushes Skills far down
+    // the page before the IntersectionObserver's first async callback fires,
+    // causing it to see the section as out-of-range and never trigger loading.
+    // Eager loading avoids this race condition entirely.
   });
 
   useSkillsAnimation({

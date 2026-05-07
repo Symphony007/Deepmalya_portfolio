@@ -49,7 +49,14 @@ export function useSkillsAnimation({
       ctx2d.clearRect(0, 0, canvas.width, canvas.height);
       ctx2d.drawImage(img, 0, 0, img.width, img.height, cx, cy, img.width * ratio, img.height * ratio);
     };
-    render(images[0]);
+
+    // Guard: ensure the first frame image is actually decoded before painting
+    const firstImg = images[0];
+    if (firstImg?.complete && firstImg.naturalWidth > 0) {
+      render(firstImg);
+    } else if (firstImg) {
+      firstImg.addEventListener('load', () => render(firstImg), { once: true });
+    }
 
     gsap.set(samuraiRef.current, { yPercent: 100, opacity: 0 });
     gsap.set(frontRingRef.current, { opacity: 0, visibility: 'hidden' });
@@ -63,6 +70,9 @@ export function useSkillsAnimation({
           end: '+=600%',
           scrub: 1,
           pin: true,
+          // Lower priority → refreshed after About. About's pin spacer must
+          // be in the layout before Skills calculates its start position.
+          refreshPriority: -1,
         },
       });
 
@@ -100,11 +110,11 @@ export function useSkillsAnimation({
       tl.to({}, { duration: 3.5 });
     }, section);
 
-    // Force ScrollTrigger to recalculate after About's pin spacer is set up.
-    // Without this, Skills' ScrollTrigger calculates its start position before
-    // About's pin spacer is fully accounted for, causing the section to never
-    // trigger correctly on production builds.
-    ScrollTrigger.refresh();
+    // Signal to App.tsx that this trigger is registered. The App handles a
+    // single coordinated ScrollTrigger.refresh() after ALL pinned sections
+    // have mounted. Calling refresh() here independently was racing against
+    // About's own refresh(), leading to stale pin-spacer calculations.
+    window.dispatchEvent(new CustomEvent('skills-trigger-ready'));
 
     let resizeTimer: NodeJS.Timeout;
     const onResize = () => {

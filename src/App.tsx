@@ -49,6 +49,12 @@ export default function App() {
     gsap.ticker.lagSmoothing(0);
 
     const onRefreshComplete = () => {
+      // Skip target computation until both sections' ScrollTriggers are ready.
+      // GSAP fires refresh events internally (e.g., when creating pin spacers),
+      // but at that point only one trigger may exist — computing targets then
+      // would give stale/wrong positions.
+      if (!allowTargetComputation) return;
+
       const targets: Record<string, number> = { home: 0 };
       const allTriggers = ScrollTrigger.getAll();
 
@@ -83,7 +89,52 @@ export default function App() {
     };
 
     ScrollTrigger.addEventListener('refresh', onRefreshComplete);
-    ScrollTrigger.refresh();
+
+    // ── Coordinated refresh: wait for BOTH pinned sections before refreshing ─
+    // About and Skills each dispatch a custom event when their ScrollTrigger
+    // is registered. We only refresh once BOTH are ready. This eliminates the
+    // race condition where one section's refresh() ran before the other's pin
+    // spacer existed, causing wrong start/end calculations.
+    let aboutReady = false;
+    let skillsReady = false;
+    let coordinatedRefreshDone = false;
+    // Gate: only compute targets after the coordinated refresh. GSAP internally
+    // fires refresh events when creating pin spacers, which would trigger
+    // onRefreshComplete with incomplete trigger lists.
+    let allowTargetComputation = false;
+
+    const tryCoordinatedRefresh = () => {
+      if (aboutReady && skillsReady && !coordinatedRefreshDone) {
+        coordinatedRefreshDone = true;
+        // Double rAF: first frame lets GSAP finalize pin spacer DOM changes,
+        // second frame ensures layout is stable before we measure.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            allowTargetComputation = true;
+            // Sort triggers by refreshPriority so About (priority 1) is
+            // processed before Skills (priority -1) during refresh.
+            ScrollTrigger.sort();
+            ScrollTrigger.refresh();
+          });
+        });
+      }
+    };
+
+    const onAboutReady = () => { aboutReady = true; tryCoordinatedRefresh(); };
+    const onSkillsReady = () => { skillsReady = true; tryCoordinatedRefresh(); };
+
+    window.addEventListener('about-trigger-ready', onAboutReady);
+    window.addEventListener('skills-trigger-ready', onSkillsReady);
+
+    // Safety net: if one section's event never fires (e.g. frames fail to load),
+    // force a refresh after 3 seconds so the page isn't permanently broken.
+    const safetyTimer = setTimeout(() => {
+      if (!coordinatedRefreshDone) {
+        coordinatedRefreshDone = true;
+        allowTargetComputation = true;
+        ScrollTrigger.refresh();
+      }
+    }, 3000);
 
     const stopLenis  = () => lenis.stop();
     const startLenis = () => lenis.start();
@@ -95,7 +146,10 @@ export default function App() {
     window.addEventListener('resize', onResize);
 
     return () => {
+      clearTimeout(safetyTimer);
       ScrollTrigger.removeEventListener('refresh', onRefreshComplete);
+      window.removeEventListener('about-trigger-ready', onAboutReady);
+      window.removeEventListener('skills-trigger-ready', onSkillsReady);
       window.removeEventListener('lenis-stop',  stopLenis);
       window.removeEventListener('lenis-start', startLenis);
       window.removeEventListener('resize', onResize);

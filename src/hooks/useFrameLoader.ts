@@ -75,7 +75,22 @@ export function useFrameLoader({
           { rootMargin }
         );
         observer.observe(intersectionRef.current);
-        return () => observer.disconnect();
+
+        // Safety fallback: GSAP ScrollTrigger pin spacers created by sibling
+        // sections can push this element far down the page *after* the
+        // IntersectionObserver is set up, causing the initial async callback
+        // to see the element as out-of-range. Force loading after 5 s.
+        const fallbackTimer = setTimeout(() => {
+          if (!startedLoading) {
+            startLoading();
+            observer.disconnect();
+          }
+        }, 5000);
+
+        return () => {
+          clearTimeout(fallbackTimer);
+          observer.disconnect();
+        };
       } else {
         startLoading();
       }

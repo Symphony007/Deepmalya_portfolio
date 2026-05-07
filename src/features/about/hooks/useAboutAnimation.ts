@@ -171,6 +171,9 @@ export function useAboutAnimation(props: UseAboutAnimationProps) {
           end: '+=900%',
           scrub: 1,
           pin: true,
+          // Higher priority → refreshed first. About's pin spacer must be
+          // accounted for before Skills recalculates its start position.
+          refreshPriority: 1,
         },
       });
 
@@ -222,8 +225,11 @@ export function useAboutAnimation(props: UseAboutAnimationProps) {
 
     }, containerRef);
 
-    // Force ScrollTrigger to recalculate after this pin is registered
-    ScrollTrigger.refresh();
+    // Signal to App.tsx that this trigger is registered. The App handles a
+    // single coordinated ScrollTrigger.refresh() after ALL pinned sections
+    // have mounted. Calling refresh() here independently was racing against
+    // Skills' own refresh(), leading to stale pin-spacer calculations.
+    window.dispatchEvent(new CustomEvent('about-trigger-ready'));
 
     let resizeTimer: ReturnType<typeof setTimeout>;
     const onResize = () => {
